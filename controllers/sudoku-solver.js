@@ -1,18 +1,28 @@
 class SudokuSolver {
+  simpleValidate(puzzleString) {
+    const result = puzzleString.search(/[^\d.]/gi);
+    if (result !== -1) return false;
+    if (puzzleString.length !== 81) return false;
+
+    return true;
+  }
+
   validate(puzzleString) {
     const result = puzzleString.search(/[^\d.]/gi);
-    if (result !== -1) return -1;
     if (puzzleString.length !== 81) return 0;
+    if (result !== -1) return -1;
     return 1;
   }
 
   checkRowPlacement(puzzleString, row, column, value) {
-    if (puzzleString[row].includes(value)) return false;
+    const board = puzzleString.match(/.{1,9}/g) ?? [];
+    if (board[row].includes(value)) return false;
     return true;
   }
 
   checkColPlacement(puzzleString, row, column, value) {
-    const columnString = puzzleString.map((row) => row[column]);
+    const board = puzzleString.match(/.{1,9}/g) ?? [];
+    const columnString = board.map((row) => row[column]);
     if (columnString.includes(value)) return false;
     return true;
   }
@@ -42,6 +52,10 @@ class SudokuSolver {
   }
 
   solve(puzzleString) {
+    const puzzle = puzzleString.match(/.{1,9}/g) ?? [];
+
+    const puzzleFormated = puzzle.map((row) => row.split(""));
+
     const setBits = (board, rows, columns, subgrids) => {
       for (let row = 0; row < 9; row++) {
         for (let column = 0; column < 9; column++) {
@@ -103,7 +117,8 @@ class SudokuSolver {
       backtrack(board, 0, rows, columns, subgrids);
     };
 
-    solveSudoku(puzzleString);
+    solveSudoku(puzzleFormated);
+    return puzzleFormated.flat().join("");
   }
 }
 

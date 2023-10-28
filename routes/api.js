@@ -9,18 +9,20 @@ module.exports = function (app) {
     const { puzzle, coordinate, value } = req.body;
     if (!puzzle || !coordinate || !value)
       return res.json({ error: "Required field(s) missing" });
-    const validity = solver.validate(puzzle);
-    if (validity === -1)
-      return res.json({ error: "Invalid characters in puzzle" });
-    if (validity === 0)
-      return res.json({ error: "Expected puzzle to be 81 characters long" });
 
     const coordRegex = /^[A-I][1-9]$/;
     if (!coordRegex.test(coordinate))
       return res.json({ error: "Invalid coordinate" });
 
     const numRegex = /^[1-9]$/;
-    if (!numRegex.test(value)) return res.json({ error: "Invalid value" });
+    if (!numRegex.test(Number(value)))
+      return res.json({ error: "Invalid value" });
+
+    const validity = solver.validate(puzzle);
+    if (validity === -1)
+      return res.json({ error: "Invalid characters in puzzle" });
+    if (validity === 0)
+      return res.json({ error: "Expected puzzle to be 81 characters long" });
 
     const board = puzzle.match(/.{1,9}/g) ?? [];
     const rowsMap = { A: 0, B: 1, C: 2, D: 3, E: 4, F: 5, G: 6, H: 7, I: 8 };
@@ -30,9 +32,9 @@ module.exports = function (app) {
     if (board[row][column] === value) return res.json({ valid: true });
 
     const conflictsArr = [];
-    if (!solver.checkRowPlacement(board, row, column, value))
+    if (!solver.checkRowPlacement(puzzle, row, column, value))
       conflictsArr.push("row");
-    if (!solver.checkColPlacement(board, row, column, value))
+    if (!solver.checkColPlacement(puzzle, row, column, value))
       conflictsArr.push("column");
     if (!solver.checkRegionPlacement(puzzle, row, column, value))
       conflictsArr.push("region");
@@ -43,7 +45,7 @@ module.exports = function (app) {
   });
 
   app.route("/api/solve").post((req, res) => {
-    const puzzle = req.body.puzzle;
+    let puzzle = req.body.puzzle;
     if (!puzzle) return res.json({ error: "Required field missing" });
     const validity = solver.validate(puzzle);
     if (validity === -1)
@@ -51,13 +53,7 @@ module.exports = function (app) {
     if (validity === 0)
       return res.json({ error: "Expected puzzle to be 81 characters long" });
 
-    let board = puzzle.match(/.{1,9}/g) ?? [];
-
-    const newBoard = board.map((row) => row.split(""));
-
-    solver.solve(newBoard);
-
-    const solution = newBoard.flat().join("");
+    const solution = solver.solve(puzzle);
     if (solution.includes("."))
       return res.json({ error: "Puzzle cannot be solved" });
     res.json({ solution });
